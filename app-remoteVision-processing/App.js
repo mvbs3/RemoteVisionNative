@@ -2,10 +2,13 @@ import React, { useRef, useState, useEffect } from "react";
 import { Camera } from "expo-camera";
 import axios from "axios";
 import { View, Button, StyleSheet } from "react-native";
+import { Dimensions } from "react-native";
 
 const App = () => {
   const cameraRef = useRef(null);
   const canvasRef = useRef(null);
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
 
   const [faceLocations, setFaceLocations] = useState([]);
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
@@ -85,10 +88,15 @@ const App = () => {
             key={index}
             style={{
               position: "relative",
-              left: ((640 - face.x) * 360) / 640 - (face.w * 360) / 640 / 2,
-              top: (face.y * 640) / 480 + (face.h * 640) / 480 / 2,
-              width: face.w,
-              height: face.h,
+              left:
+                screenWidth -
+                (face.x * screenWidth) / 640 -
+                (face.w * screenWidth) / 640 / 2,
+              top:
+                (face.y * screenHeight) / 480 +
+                (face.h * screenHeight) / 480 / 2,
+              width: (face.x * screenWidth) / 640,
+              height: (face.h * screenHeight) / 480,
               borderColor: "red",
               borderWidth: 2,
             }}
