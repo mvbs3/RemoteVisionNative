@@ -26,7 +26,7 @@ const App = () => {
   }, [isCameraEnabled]);
 
   const handleStartVideo = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
+    const { status } = await Camera.requestPermissionsAsync();
     if (status === "granted") {
       setIsCameraEnabled(true);
       setIsButtonVisible(false);
@@ -45,7 +45,7 @@ const App = () => {
       const base64Data = uri.base64;
       try {
         const response = await axios.post(
-          "http://10.0.0.200:5001/processar_frames/",
+          "http://10.0.0.102:5001/processar_frames/",
           {
             frame: base64Data,
           }
@@ -71,11 +71,13 @@ const App = () => {
       )}
 
       {isCameraEnabled && (
-        <Camera
-          style={styles.camera}
-          ref={cameraRef}
-          type={Camera.Constants.Type.front}
-        />
+        <Camera.PermissonProvider>
+          <Camera
+            style={styles.camera}
+            ref={cameraRef}
+            type={Camera.Constants.Type.front}
+          />
+        </Camera.PermissonProvider>
       )}
 
       <View style={styles.overlay}>
