@@ -48,7 +48,7 @@ const App = () => {
       const base64Data = uri.base64;
       try {
         const response = await axios.post(
-          "http://10.0.0.200:5001/processar_frames/",
+          "http://192.168.70.2/remoteComputation/processar_frames/",
           {
             frame: base64Data,
           }

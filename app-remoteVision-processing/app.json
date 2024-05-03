@@ -11,8 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -20,11 +21,25 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff",
-        "permissions": ["CAMERA"]
-      }
+        "permissions": [
+          "CAMERA"
+        ]
+      },
+      "package": "com.mazelinhuu.appremoteVisionprocessing"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7123eff7-1fb8-4512-b2ed-b74cea3f943b"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7123eff7-1fb8-4512-b2ed-b74cea3f943b"
     }
   }
 }
