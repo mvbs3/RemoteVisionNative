@@ -15,6 +15,9 @@ const App = () => {
   const [isButtonVisible, setIsButtonVisible] = useState(true);
   const [frameCount, setFrameCount] = useState(0);
 
+  const frameProcessor = useFrameProcessor((frame) => {
+    console.log(frame);
+  }, []);
   useEffect(() => {
     let interval;
     if (isCameraEnabled) {
@@ -48,7 +51,7 @@ const App = () => {
       const base64Data = uri.base64;
       try {
         const response = await axios.post(
-          "http://192.168.70.2/remoteComputation/processar_frames/",
+          "http://192.168.154.229:5001/processar_frames/",
           {
             frame: base64Data,
           }
@@ -78,6 +81,7 @@ const App = () => {
           style={styles.camera}
           ref={cameraRef}
           type={Camera.Constants.Type.front}
+          frameProcessor={frameProcessor}
         />
       )}
 
