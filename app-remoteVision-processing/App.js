@@ -1,66 +1,50 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Camera } from "expo-camera";
 import axios from "axios";
-import { View, Button, StyleSheet } from "react-native";
-import { Dimensions } from "react-native";
+import { View, Button, StyleSheet, Dimensions } from "react-native";
+import {
+  Camera,
+  useFrameProcessor,
+  CameraPosition,
+} from "react-native-vision-camera";
 
 const App = () => {
   const cameraRef = useRef(null);
-  const canvasRef = useRef(null);
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
 
   const [faceLocations, setFaceLocations] = useState([]);
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isButtonVisible, setIsButtonVisible] = useState(true);
-  const [frameCount, setFrameCount] = useState(0);
 
   useEffect(() => {
-    let interval;
     if (isCameraEnabled) {
-      interval = setInterval(() => {
-        handleCapture();
-        setFrameCount((prevCount) => prevCount + 1);
-      }, 0.01); // Capturar a cada segundo
-    } else {
-      clearInterval(interval);
+      const unsubscribeProcessor = useFrameProcessor(async (frame) => {
+        try {
+          const base64Data = frame.base64;
+          const response = await axios.post(
+            "http://192.168.70.2/remoteComputation/processar_frames/",
+            {
+              frame: base64Data,
+            }
+          );
+          setFaceLocations(response.data.faces);
+        } catch (error) {
+          console.error("Erro ao processar quadro:", error);
+        }
+      });
+      return () => {
+        unsubscribeProcessor();
+      };
     }
-    return () => clearInterval(interval);
   }, [isCameraEnabled]);
 
   const handleStartVideo = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status === "granted") {
+    const permission = await Camera.requestCameraPermission();
+    if (permission) {
       setIsCameraEnabled(true);
       setIsButtonVisible(false);
     } else {
       console.log("Permissão de câmera negada");
-    }
-  };
-
-  const handleCapture = async () => {
-    try {
-      const options = { quality: 0.5, base64: true };
-      const uri = await cameraRef.current.takePictureAsync(options);
-
-      // Processar a imagem capturada
-      console.log("Imagem capturada com sucesso:");
-      const base64Data = uri.base64;
-      try {
-        const response = await axios.post(
-          "http://192.168.70.2/remoteComputation/processar_frames/",
-          {
-            frame: base64Data,
-          }
-        );
-
-        setFaceLocations(response.data.faces);
-      } catch (error) {
-        console.error("Erro ao processar quadro:", error);
-      }
-    } catch (error) {
-      // Lidar com erros de captura
-      console.error("Erro ao capturar imagem:", error);
     }
   };
 
@@ -69,7 +53,7 @@ const App = () => {
       {isButtonVisible && (
         <Button
           title={isCameraEnabled ? "Capturar Imagem" : "Iniciar Câmera"}
-          onPress={isCameraEnabled ? handleCapture : handleStartVideo}
+          onPress={handleStartVideo}
         />
       )}
 
@@ -77,7 +61,7 @@ const App = () => {
         <Camera
           style={styles.camera}
           ref={cameraRef}
-          type={Camera.Constants.Type.front}
+          position={CameraPosition.FRONT}
         />
       )}
 
