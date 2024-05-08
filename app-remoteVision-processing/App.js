@@ -21,7 +21,7 @@ const { width, height } = Dimensions.get("window");
 
 export default function App() {
   const fixedFaceLocations = [
-    { x: 100, y: 100, w: 50, h: 50 },
+    { x: 100, y: 100, w: 50, h: 60 },
     { x: 200, y: 150, w: 60, h: 60 },
     { x: 300, y: 200, w: 70, h: 70 },
   ];
