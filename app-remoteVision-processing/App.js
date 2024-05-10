@@ -35,30 +35,28 @@ export default function App() {
     const loop = async () => {
       const imageTensor = await images.next().value;
 
-      // Get the raw pixel data as a TypedArray
-      const imageData = await imageTensor.data();
+      imageTensor.array().then(async (array) => {
+        //console.log(array); // Isso imprimirá a matriz de valores no console
+        //a = array;
+        try {
+          const response = await axios.post(
+            "http://10.0.0.200:5001/processar_frames/",
+            {
+              frame: array,
+            }
+          );
+          console.log(response.data.faces);
+          setFaceLocations(response.data.faces);
 
-      // Convert the TypedArray to a Buffer
-      const imageBuffer = Buffer.from(imageData);
-
-      const base64EncodedImage = imageBuffer.toString("base64");
-      //console.log(base64EncodedImage);
-      try {
-        const response = await axios.post(
-          "http://10.0.0.200:5001/processar_frames",
-          {
-            frame: base64EncodedImage,
-          }
-        );
-        setFaceLocations(response.data.faces);
-
-        //console.log(response);
-      } catch (error) {
-        console.log("error");
-      }
+          //console.log(response);
+        } catch (error) {
+          console.log("error");
+        }
+        //console.log(a);
+      });
 
       // Aguarda 1 segundo antes de chamar a função loop novamente
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       requestAnimationFrame(loop);
     };
@@ -139,11 +137,9 @@ export default function App() {
                   left:
                     screenWidth -
                     (face.x * screenWidth) / 640 -
-                    (face.w * screenWidth) / 640 / 2,
-                  top:
-                    (face.y * screenHeight) / 480 +
-                    (face.h * screenHeight) / 480 / 2,
-                  width: (face.x * screenWidth) / 640,
+                    (face.w * screenWidth) / 640,
+                  top: (face.y * screenHeight) / 480,
+                  width: face.w,
                   height: (face.h * screenHeight) / 480,
                   borderColor: "red",
                   borderWidth: 2,
