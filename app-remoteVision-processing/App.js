@@ -30,6 +30,7 @@ export default function App() {
   const screenHeight = Dimensions.get("window").height;
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isButtonVisible, setIsButtonVisible] = useState(true);
+  const [isMecOrCloud, setIsMecOrCloud] = useState(" ");
 
   function handleCameraStream(images, updatePreview, gl) {
     const loop = async () => {
@@ -39,14 +40,19 @@ export default function App() {
         //console.log(array); // Isso imprimirá a matriz de valores no console
         //a = array;
         try {
-          const response = await axios.post(
-            "http://10.0.0.200:5001/processar_frames/",
-            {
-              frame: array,
-            }
-          );
-          console.log(response.data.faces);
-          setFaceLocations(response.data.faces);
+          if (isMecOrCloud == "MEC") {
+            console.log("in progress");
+          } else if (isMecOrCloud == "Cloud") {
+            const response = await axios.post(
+              "http://mazelinhuu.pythonanywhere.com/processar_frames/",
+              {
+                frame: array,
+              }
+            );
+            setFaceLocations(response.data.faces);
+
+            console.log(response.data.faces);
+          }
 
           //console.log(response);
         } catch (error) {
@@ -75,9 +81,15 @@ export default function App() {
       setModel(await cocoSsd.load());
     })();
   }, []);
-  const handleStartVideo = async () => {
+  const handleStartVideoMec = async () => {
     setIsCameraEnabled(true);
     setIsButtonVisible(false);
+    setIsMecOrCloud("MEC");
+  };
+  const handleStartVideoCloud = async () => {
+    setIsCameraEnabled(true);
+    setIsButtonVisible(false);
+    setIsMecOrCloud("Cloud");
   };
   const handleStopVideo = async () => {
     setIsCameraEnabled(false);
@@ -91,12 +103,12 @@ export default function App() {
             <Button
               style={styles.button}
               title={"Cloud"}
-              onPress={handleStartVideo}
+              onPress={handleStartVideoCloud}
             />
             <Button
               style={styles.button}
-              title={"Mec"}
-              onPress={handleStartVideo}
+              title={"MEC"}
+              onPress={handleStartVideoMec}
             />
           </View>
           <Text>Teste</Text>
@@ -111,8 +123,8 @@ export default function App() {
             // Tensor related props
             cameraTextureHeight={textureDims.height}
             cameraTextureWidth={textureDims.width}
-            resizeHeight={200}
-            resizeWidth={152}
+            resizeHeight={320}
+            resizeWidth={240}
             resizeDepth={3}
             onReady={handleCameraStream}
             autorender={true}
