@@ -31,6 +31,30 @@ export default function App() {
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isButtonVisible, setIsButtonVisible] = useState(true);
   const [isMecOrCloud, setIsMecOrCloud] = useState(" ");
+  const [rttFrame, setRttFrame] = useState(0);
+  const [latency, setLatency] = useState(0);
+  const [timeProcess, setTimeProcess] = useState(0);
+  const handlePing = async (tecnology) => {
+    try {
+      const startTime = new Date();
+      if (tecnology == "MEC") {
+        const res = await axios.get(
+          "http://192.168.70.2/remoteComputation/ping"
+        ); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
+      } else {
+        const res = await axios.get(
+          "http://mazelinhuu.pythonanywhere.com/ping"
+        ); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
+      }
+
+      const endTime = new Date();
+      const rtt = endTime - startTime;
+      setLatency(rtt);
+    } catch (error) {
+      console.error(error);
+      setLatency(-1);
+    }
+  };
 
   function handleCameraStream(images, updatePreview, gl) {
     const loop = async () => {
@@ -41,14 +65,38 @@ export default function App() {
         //a = array;
         try {
           if (isMecOrCloud == "MEC") {
-            console.log("in progress");
-          } else if (isMecOrCloud == "Cloud") {
+            const startTime = new Date();
             const response = await axios.post(
-              "http://mazelinhuu.pythonanywhere.com/processar_frames/",
+              "http://192.168.70.2/remoteComputation/processar_frames",
               {
                 frame: array,
               }
             );
+
+            const endTime = new Date();
+            const rtt = endTime - startTime;
+
+            setRttFrame(rtt);
+            setTimeProcess(response.data.timeProcess);
+            setFaceLocations(response.data.faces);
+
+            console.log(response.data.faces);
+          } else if (isMecOrCloud == "Cloud") {
+            const startTime = new Date();
+
+            const response = await axios.post(
+              "http://mazelinhuu.pythonanywhere.com/processar_frames",
+              {
+                frame: array,
+              }
+            );
+            const endTime = new Date();
+
+            // Calcular a latência em milissegundos
+            const rtt = endTime - startTime;
+            setRttFrame(rtt);
+            setTimeProcess(response.data.processTime);
+
             setFaceLocations(response.data.faces);
 
             console.log(response.data.faces);
@@ -60,9 +108,10 @@ export default function App() {
         }
         //console.log(a);
       });
+      handlePing(isMecOrCloud);
 
       // Aguarda 1 segundo antes de chamar a função loop novamente
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 700));
 
       requestAnimationFrame(loop);
     };
@@ -78,7 +127,6 @@ export default function App() {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       await tf.ready();
-      setModel(await cocoSsd.load());
     })();
   }, []);
   const handleStartVideoMec = async () => {
@@ -123,14 +171,21 @@ export default function App() {
             // Tensor related props
             cameraTextureHeight={textureDims.height}
             cameraTextureWidth={textureDims.width}
-            resizeHeight={320}
-            resizeWidth={240}
+            resizeHeight={200}
+            resizeWidth={152}
             resizeDepth={3}
             onReady={handleCameraStream}
             autorender={true}
             useCustomShadersToResize={false}
           ></TensorCamera>
         )}
+        <View style={styles.overlay2}>
+          <Text style={styles.latencyText}>Frame RTT: {rttFrame}ms</Text>
+          <Text style={styles.latencyText}>Latência: {latency}ms</Text>
+          <Text style={styles.latencyText}>
+            Tempo Processamento: {timeProcess}ms
+          </Text>
+        </View>
         {isCameraEnabled && (
           <Button
             style={styles.buttonContainer}
@@ -177,6 +232,12 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+
+  overlay2: {
+    position: "absolute", // Posicione a overlay acima da TensorCamera
+    top: 40, // Ajuste a posição vertical conforme necessário
+    left: 20,
   },
   buttonContainer: {
     position: "absolute",
