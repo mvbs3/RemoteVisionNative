@@ -12,7 +12,9 @@ import {
   Text,
 } from "react-native";
 import axios from "axios";
-
+//const MecIp = "192.168.70.2/remoteComputation"
+const MecIP = "10.0.0.200:5001";
+const CloudIP = "mazelinhuu.pythonanywhere.com";
 const TensorCamera = cameraWithTensors(Camera);
 
 LogBox.ignoreAllLogs(true);
@@ -26,6 +28,9 @@ export default function App() {
     { x: 300, y: 200, w: 70, h: 70 },
   ];
   const [faceLocations, setFaceLocations] = useState(fixedFaceLocations);
+  const [emotions, setEmotions] = useState(["happy", "happy", "happy"]);
+  const [emotionValues, setEmotionValues] = useState([1.0, 1.0, 1.0]);
+
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
@@ -38,13 +43,9 @@ export default function App() {
     try {
       const startTime = new Date();
       if (tecnology == "MEC") {
-        const res = await axios.get(
-          "http://192.168.70.2/remoteComputation/ping"
-        ); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
+        const res = await axios.get("http://" + MecIP + "/ping"); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
       } else {
-        const res = await axios.get(
-          "http://mazelinhuu.pythonanywhere.com/ping"
-        ); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
+        const res = await axios.get("http://" + CloudIP + "/ping"); // Substitua 'seu_ip' pelo endereço IP do seu servidor Flask
       }
 
       const endTime = new Date();
@@ -67,7 +68,9 @@ export default function App() {
           if (isMecOrCloud == "MEC") {
             const startTime = new Date();
             const response = await axios.post(
-              "http://192.168.70.2/remoteComputation/processar_frames",
+              //"http://192.168.70.2/remoteComputation/processar_frames",
+              "http://" + MecIP + "/processar_emotion",
+
               {
                 frame: array,
               }
@@ -79,13 +82,15 @@ export default function App() {
             setRttFrame(rtt);
             setTimeProcess(response.data.timeProcess);
             setFaceLocations(response.data.faces);
+            setEmotions(response.data.emotion);
+            setEmotionValues(response.data.emotionValue);
 
             console.log(response.data.faces);
           } else if (isMecOrCloud == "Cloud") {
             const startTime = new Date();
 
             const response = await axios.post(
-              "http://mazelinhuu.pythonanywhere.com/processar_frames",
+              "http://" + CloudIP + "/processar_frames",
               {
                 frame: array,
               }
@@ -211,7 +216,17 @@ export default function App() {
                   borderColor: "red",
                   borderWidth: 2,
                 }}
-              />
+              >
+                <Text
+                  style={{
+                    backgroundColor: "red",
+                    color: "white",
+                    marginTop: -3,
+                  }}
+                >
+                  {emotions[index]} {emotionValues[index]}
+                </Text>
+              </View>
             ))}
           </View>
         )}
