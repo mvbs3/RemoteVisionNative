@@ -12,9 +12,13 @@ import {
   Text,
 } from "react-native";
 import axios from "axios";
-//const MecIp = "192.168.70.2/remoteComputation"
+
+//const MecIP = "172.22.0.169/remoteComputation";
+//const MecIP = "192.168.1.144:5001";
 const MecIP = "10.0.0.200:5001";
-const CloudIP = "mazelinhuu.pythonanywhere.com";
+
+//const CloudIP = "mazelinhuu.pythonanywhere.com";
+const CloudIP = "20.197.224.24:5001";
 const TensorCamera = cameraWithTensors(Camera);
 
 LogBox.ignoreAllLogs(true);
@@ -24,12 +28,13 @@ const { width, height } = Dimensions.get("window");
 export default function App() {
   const fixedFaceLocations = [
     { x: 100, y: 100, w: 50, h: 60 },
-    { x: 200, y: 150, w: 60, h: 60 },
-    { x: 300, y: 200, w: 70, h: 70 },
+    { x: 100, y: 100, w: 60, h: 60 },
+    { x: 100, y: 100, w: 70, h: 70 },
   ];
   const [faceLocations, setFaceLocations] = useState(fixedFaceLocations);
   const [emotions, setEmotions] = useState(["happy", "happy", "happy"]);
   const [emotionValues, setEmotionValues] = useState([1.0, 1.0, 1.0]);
+  const [sample, setSample] = useState(0);
 
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
@@ -39,6 +44,9 @@ export default function App() {
   const [rttFrame, setRttFrame] = useState(0);
   const [latency, setLatency] = useState(0);
   const [timeProcess, setTimeProcess] = useState(0);
+  let rttPing = 0;
+  let rtt = 0;
+  let sampleIterable = 0;
   const handlePing = async (tecnology) => {
     try {
       const startTime = new Date();
@@ -49,8 +57,8 @@ export default function App() {
       }
 
       const endTime = new Date();
-      const rtt = endTime - startTime;
-      setLatency(rtt);
+      rttPing = endTime - startTime;
+      setLatency(rttPing);
     } catch (error) {
       console.error(error);
       setLatency(-1);
@@ -61,24 +69,36 @@ export default function App() {
     const loop = async () => {
       const imageTensor = await images.next().value;
 
+      //console.log("Tamanho do tensor de imagem em bytes:", imageTensor);
+
+      //console.log(imageTensor);
       imageTensor.array().then(async (array) => {
+        //const arrayString = JSON.stringify(array);
+        //const arraySizeBytes = new Blob([arrayString]).size;
+        //console.log("Tamanho do array em bytes:", imageTensor.size);
         //console.log(array); // Isso imprimirá a matriz de valores no console
         //a = array;
         try {
           if (isMecOrCloud == "MEC") {
+            const sendInfo = {
+              frame: array,
+              sample: sampleIterable,
+              csvSaver: {
+                rttTimer: rtt,
+                latencyTime: rttPing,
+                packetSizeDown: imageTensor.size,
+              },
+            };
             const startTime = new Date();
             const response = await axios.post(
               //"http://192.168.70.2/remoteComputation/processar_frames",
               "http://" + MecIP + "/processar_emotion",
 
-              {
-                frame: array,
-              }
+              sendInfo
             );
-
             const endTime = new Date();
-            const rtt = endTime - startTime;
-
+            rtt = endTime - startTime;
+            //console.log(rtt, response.data.emotion);
             setRttFrame(rtt);
             setTimeProcess(response.data.timeProcess);
             setFaceLocations(response.data.faces);
@@ -87,22 +107,28 @@ export default function App() {
 
             console.log(response.data.faces);
           } else if (isMecOrCloud == "Cloud") {
+            const sendInfo = {
+              frame: array,
+              sample: sampleIterable,
+              csvSaver: {
+                rttTimer: rtt,
+                latencyTime: rttPing,
+                packetSizeDown: imageTensor.size,
+              },
+            };
             const startTime = new Date();
-
             const response = await axios.post(
-              "http://" + CloudIP + "/processar_frames",
-              {
-                frame: array,
-              }
+              "http://" + CloudIP + "/processar_emotion",
+              sendInfo
             );
             const endTime = new Date();
-
-            // Calcular a latência em milissegundos
-            const rtt = endTime - startTime;
+            rtt = endTime - startTime;
+            //console.log(rtt, response.data.emotion);
             setRttFrame(rtt);
-            setTimeProcess(response.data.processTime);
-
+            setTimeProcess(response.data.timeProcess);
             setFaceLocations(response.data.faces);
+            setEmotions(response.data.emotion);
+            setEmotionValues(response.data.emotionValue);
 
             console.log(response.data.faces);
           }
@@ -114,9 +140,10 @@ export default function App() {
         //console.log(a);
       });
       handlePing(isMecOrCloud);
-
+      sampleIterable = sampleIterable + 1;
+      setSample(sampleIterable);
       // Aguarda 1 segundo antes de chamar a função loop novamente
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       requestAnimationFrame(loop);
     };
@@ -164,7 +191,7 @@ export default function App() {
               onPress={handleStartVideoMec}
             />
           </View>
-          <Text>Teste</Text>
+          <Text>Selecione qual tecnologia você quer testar!</Text>
         </View>
       )}
       <View style={styles.overlay}>
@@ -187,9 +214,11 @@ export default function App() {
         <View style={styles.overlay2}>
           <Text style={styles.latencyText}>Frame RTT: {rttFrame}ms</Text>
           <Text style={styles.latencyText}>Latência: {latency}ms</Text>
+
           <Text style={styles.latencyText}>
             Tempo Processamento: {timeProcess}ms
           </Text>
+          <Text style={styles.latencyText}>sample: {sample}</Text>
         </View>
         {isCameraEnabled && (
           <Button
@@ -205,7 +234,7 @@ export default function App() {
               <View
                 key={index}
                 style={{
-                  position: "relative",
+                  position: "absolute",
                   left:
                     screenWidth -
                     (face.x * screenWidth) / 640 -
@@ -221,7 +250,7 @@ export default function App() {
                   style={{
                     backgroundColor: "red",
                     color: "white",
-                    marginTop: -3,
+                    marginTop: -20,
                   }}
                 >
                   {emotions[index]} {emotionValues[index]}
