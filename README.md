@@ -18,11 +18,17 @@ O objetivo do projeto é validar a ideia de processamento remoto e analisar as d
 - React Native
 - TensorFlow
 - OpenCV
-- Backend customizado para processamento de visão computacional
+- [Backend customizado para processamento de visão computacional](https://github.com/mvbs3/RemoteVision)
 
 ## Prints do Aplicativo
 
+O gif abaixo mostra o funcionamento da aplicação funcionando com o processamento sendo feito na Cloud:4
 
+![Gif aplicação na cloud](img/screencast.gif)
+
+Explicação da tela funcional do aplicativo:
+
+![Texto alternativo](img/AppScreen.png)
 
 ## Pré-requisitos:
   - Node.js instalado
